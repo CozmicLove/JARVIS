@@ -1,18 +1,16 @@
-from plugins import hello
-from plugins import status
+from core.plugin_loader import PluginLoader
 
 
 class CommandEngine:
 
-    def execute(self, command):
+    def __init__(self):
+        loader = PluginLoader()
+        self.plugins = loader.load_plugins()
 
+    def execute(self, command):
         command = command.lower()
 
-        if command == "hello":
-            return hello.run()
+        if command in self.plugins:
+            return self.plugins[command]()
 
-        elif command == "status":
-            return status.run()
-
-        else:
-            return "Command not recognized."
+        return "Command not recognized."
