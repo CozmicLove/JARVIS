@@ -1,49 +1,60 @@
-from core.boot import boot
-from core.assistant import Assistant
-from core.command import CommandEngine
 from core.brain import Brain
 from core.speaker import Speaker
+from core.listener import Listener
 
 
-# Boot System
-boot()
+def print_banner():
+    print("\n" + "=" * 70)
+    print(" " * 27 + "JARVIS READY")
+    print("=" * 70 + "\n")
 
 
-# Initialize Modules
-jarvis = Assistant("JARVIS")
-engine = CommandEngine()
-brain = Brain()
-speaker = Speaker()
+def main():
+
+    brain = Brain()
+    speaker = Speaker()
+    listener = Listener()
+
+    print_banner()
+
+    speaker.speak("Hello Alfred. I am Jarvis. Systems online.")
+
+    while True:
+
+        print()
+        print("Type your message or type LISTEN to use your microphone.")
+        user = input("You : ").strip()
+
+        if not user:
+            continue
+
+        if user.lower() == "listen":
+
+            user = listener.listen()
+
+            print(f"\nYou said : {user}")
+
+            if not user:
+                continue
+
+        if user.lower() in ["exit", "quit", "bye"]:
+
+            speaker.speak("Goodbye Alfred.")
+            print("JARVIS : Goodbye Alfred.")
+            break
+
+        try:
+
+            response = brain.ask(user)
+
+        except Exception as error:
+
+            response = f"Sorry, something went wrong. {error}"
+
+        print(f"\nJARVIS : {response}")
+
+        speaker.speak(response)
 
 
-# Startup Message
-startup_message = "System Online."
-
-jarvis.say(startup_message)
-speaker.speak(startup_message)
-
-welcome_message = "Type a command, ask a question, or type exit."
-
-jarvis.say(welcome_message)
-speaker.speak(welcome_message)
-
-
-# Main Loop
-while True:
-
-    user = input("You : ")
-
-    if user.lower() == "exit":
-        goodbye = "Shutting down session."
-
-        jarvis.say(goodbye)
-        speaker.speak(goodbye)
-        break
-
-    response = engine.execute(user)
-
-    if response == "Command not recognized.":
-        response = brain.ask(user)
-
-    jarvis.say(response)
-    speaker.speak(response)
+if __name__ == "__main__":
+    main()
