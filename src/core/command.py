@@ -1,3 +1,7 @@
+from plugins import hello
+from plugins import status
+
+
 class CommandEngine:
 
     def execute(self, command):
@@ -5,10 +9,10 @@ class CommandEngine:
         command = command.lower()
 
         if command == "hello":
-            return "Hello Alfred."
+            return hello.run()
 
         elif command == "status":
-            return "All systems operational."
+            return status.run()
 
         else:
             return "Command not recognized."
