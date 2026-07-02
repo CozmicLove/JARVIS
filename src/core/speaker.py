@@ -6,29 +6,40 @@ import tempfile
 import subprocess
 
 import soundfile as sf
-from kokoro import KPipeline
 
 
 class Speaker:
 
     def __init__(self):
-
-        self.pipeline = KPipeline(
-            lang_code="a",
-            repo_id="hexgrad/Kokoro-82M"
-        )
-
+        self.pipeline = None
         self.voice = "am_adam"
         self.speed = 0.95
+        self.sample_rate = 24000
+
+    def load_engine(self):
+        if self.pipeline is None:
+            print("Loading Jarvis voice engine...")
+
+            from kokoro import KPipeline
+
+            self.pipeline = KPipeline(
+                lang_code="a",
+                repo_id="hexgrad/Kokoro-82M"
+            )
+
+            print("Voice engine ready.")
 
     def speak(self, text):
-
         if not text:
             return
 
         text = str(text).strip()
 
+        if not text:
+            return
+
         try:
+            self.load_engine()
 
             generator = self.pipeline(
                 text,
@@ -37,19 +48,10 @@ class Speaker:
             )
 
             for _, _, audio in generator:
-
-                with tempfile.NamedTemporaryFile(
-                    delete=False,
-                    suffix=".wav"
-                ) as tmp:
-
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
                     wav_file = tmp.name
 
-                sf.write(
-                    wav_file,
-                    audio,
-                    24000
-                )
+                sf.write(wav_file, audio, self.sample_rate)
 
                 subprocess.run(
                     [

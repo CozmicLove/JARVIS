@@ -1,60 +1,125 @@
-from core.brain import Brain
-from core.speaker import Speaker
 from core.listener import Listener
+from core.speaker import Speaker
+from core.brain import Brain
+
+listener = Listener()
+speaker = Speaker()
+brain = Brain()
+
+WAKE_WORDS = [
+    "jarvis",
+    "hey jarvis",
+    "okay jarvis",
+    "ok jarvis",
+    "hi jarvis",
+    "jervis",
+    "garvis",
+    "garfish",
+    "service"
+]
+
+EXIT_WORDS = [
+    "exit",
+    "quit",
+    "shutdown",
+    "goodbye",
+    "bye"
+]
+
+STOP_WORDS = [
+    "stop listening",
+    "go to sleep",
+    "sleep",
+    "stand by",
+    "standby"
+]
 
 
-def print_banner():
-    print("\n" + "=" * 70)
-    print(" " * 27 + "JARVIS READY")
-    print("=" * 70 + "\n")
+def contains(text, words):
+    text = text.lower()
+    return any(word in text for word in words)
 
 
-def main():
+def remove_wake_word(text):
+    result = text
 
-    brain = Brain()
-    speaker = Speaker()
-    listener = Listener()
+    for word in WAKE_WORDS:
+        result = result.replace(word, "")
 
-    print_banner()
+    return result.strip(" ,.!?")
 
-    speaker.speak("Hello Alfred. I am Jarvis. Systems online.")
 
-    while True:
+print()
+print("=" * 60)
+print("JARVIS READY")
+print("=" * 60)
 
+speaker.speak("Systems online, Sir.")
+
+sleeping = True
+
+while True:
+
+    if sleeping:
         print()
-        print("Type your message or type LISTEN to use your microphone.")
-        user = input("You : ").strip()
+        print("Sleeping... say 'Jarvis' to activate.")
 
-        if not user:
+        text = listener.listen()
+
+        if not text:
             continue
 
-        if user.lower() == "listen":
+        print()
+        print("Heard :", text)
 
-            user = listener.listen()
-
-            print(f"\nYou said : {user}")
-
-            if not user:
-                continue
-
-        if user.lower() in ["exit", "quit", "bye"]:
-
-            speaker.speak("Goodbye Alfred.")
-            print("JARVIS : Goodbye Alfred.")
+        if contains(text, EXIT_WORDS):
+            speaker.speak("Goodbye Sir.")
             break
 
-        try:
+        if contains(text, WAKE_WORDS):
 
-            response = brain.ask(user)
+            command = remove_wake_word(text)
 
-        except Exception as error:
+            if command == "":
+                speaker.speak("Yes Sir?")
+                sleeping = False
+                continue
 
-            response = f"Sorry, something went wrong. {error}"
+            text = command
 
-        print(f"\nJARVIS : {response}")
+        else:
+            continue
 
-        speaker.speak(response)
+    else:
 
+        text = listener.listen()
 
-if __name__ == "__main__":
-    main()
+        if not text:
+            continue
+
+        print()
+        print("Heard :", text)
+
+        if contains(text, EXIT_WORDS):
+            speaker.speak("Goodbye Sir.")
+            break
+
+        if contains(text, STOP_WORDS):
+            speaker.speak("Standing by.")
+            sleeping = True
+            continue
+
+    print()
+    print("Thinking...")
+
+    answer = brain.ask(text)
+
+    print()
+    print("JARVIS :", answer)
+
+    print()
+    print("Speaking...")
+
+    speaker.speak(answer)
+
+    sleeping = True

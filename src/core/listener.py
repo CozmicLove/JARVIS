@@ -1,4 +1,6 @@
+import os
 import tempfile
+
 import sounddevice as sd
 import soundfile as sf
 from faster_whisper import WhisperModel
@@ -9,7 +11,12 @@ class Listener:
     def __init__(self):
         self.sample_rate = 16000
         self.duration = 5
-        self.model = WhisperModel("base", device="cpu", compute_type="int8")
+
+        self.model = WhisperModel(
+            "small",
+            device="cuda",
+            compute_type="float16"
+        )
 
     def listen(self):
         print("Listening...")
@@ -26,13 +33,26 @@ class Listener:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as file:
             audio_path = file.name
 
-        sf.write(audio_path, audio, self.sample_rate)
+        try:
+            sf.write(audio_path, audio, self.sample_rate)
 
-        segments, _ = self.model.transcribe(audio_path)
+            segments, _ = self.model.transcribe(
+                audio_path,
+                language="en",
+                beam_size=3,
+                vad_filter=True,
+                condition_on_previous_text=False
+            )
 
-        text = ""
+            text = ""
 
-        for segment in segments:
-            text += segment.text
+            for segment in segments:
+                text += segment.text + " "
 
-        return text.strip()
+            return text.strip()
+
+        finally:
+            try:
+                os.remove(audio_path)
+            except:
+                pass
