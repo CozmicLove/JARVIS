@@ -8,22 +8,20 @@ def boot_line(text):
 
 
 def boot():
-
     settings = load_settings()
-    jarvis = settings["jarvis"]
+    nova = settings["nova"]
 
     print("=" * 70)
 
     print(r"""
-       ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗
-       ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝
-       ██║███████║██████╔╝██║   ██║██║███████╗
-  ██   ██║██╔══██║██╔══██╗╚██╗ ██╔╝██║╚════██║
-  ╚█████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║███████║
-   ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝
+        N   N   OOO   V   V    A
+        NN  N  O   O  V   V   A A
+        N N N  O   O  V   V  AAAAA
+        N  NN  O   O   V V   A   A
+        N   N   OOO     V    A   A
 """)
 
-    print(f"      {jarvis['name']} Personal AI Operating System")
+    print(f"      {nova['name']} Personal AI Operating System")
 
     print("=" * 70)
     print()
@@ -37,5 +35,5 @@ def boot():
     print()
 
     print("=" * 70)
-    print(f"                     {jarvis['name']} READY")
+    print(f"                     {nova['name']} READY")
     print("=" * 70)

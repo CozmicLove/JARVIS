@@ -4,7 +4,7 @@ import soundfile as sf
 pipeline = KPipeline(lang_code="a")
 
 text = """
-Halo Alfred. Saya JARVIS. Mulai sekarang saya akan berbicara dengan suara yang lebih natural.
+Halo Alfred. Saya NOVA. Mulai sekarang saya akan berbicara dengan suara yang lebih natural.
 Visual Studio Code sudah siap. Sistem utama berjalan normal.
 """
 

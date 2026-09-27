@@ -1,6 +1,16 @@
 venv/
+kokoro_env/
 __pycache__/
 *.pyc
 *.log
 .env
 .vscode/
+.codex/
+graphify-out/
+AGENTS.md
+config/locations.json
+config/spotify_token.json
+models/
+kokoro_test_*.wav
+*.tmp
+*.temp

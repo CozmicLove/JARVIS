@@ -1,125 +1,41 @@
-from core.listener import Listener
-from core.speaker import Speaker
-from core.brain import Brain
-
-listener = Listener()
-speaker = Speaker()
-brain = Brain()
-
-WAKE_WORDS = [
-    "jarvis",
-    "hey jarvis",
-    "okay jarvis",
-    "ok jarvis",
-    "hi jarvis",
-    "jervis",
-    "garvis",
-    "garfish",
-    "service"
-]
-
-EXIT_WORDS = [
-    "exit",
-    "quit",
-    "shutdown",
-    "goodbye",
-    "bye"
-]
-
-STOP_WORDS = [
-    "stop listening",
-    "go to sleep",
-    "sleep",
-    "stand by",
-    "standby"
-]
+from core.runtime import NovaRuntime
 
 
-def contains(text, words):
-    text = text.lower()
-    return any(word in text for word in words)
+def print_status(status):
+    if status == "STANDBY":
+        print()
+        print("Standby... listening for command.")
+    elif status == "SLEEPING":
+        print()
+        print("Sleeping... say 'wake up' to activate.")
+    elif status == "THINKING":
+        print()
+        print("Thinking...")
+    elif status == "SPEAKING":
+        print()
+        print("Speaking...")
 
 
-def remove_wake_word(text):
-    result = text
+def print_heard(text):
+    print()
+    print("Heard :", text)
 
-    for word in WAKE_WORDS:
-        result = result.replace(word, "")
 
-    return result.strip(" ,.!?")
+def print_answer(answer):
+    print()
+    print("NOVA :", answer)
 
 
 print()
 print("=" * 60)
-print("JARVIS READY")
+print("NOVA READY")
 print("=" * 60)
 
-speaker.speak("Systems online, Sir.")
-
-sleeping = True
-
-while True:
-
-    if sleeping:
-        print()
-        print("Sleeping... say 'Jarvis' to activate.")
-
-        text = listener.listen()
-
-        if not text:
-            continue
-
-        print()
-        print("Heard :", text)
-
-        if contains(text, EXIT_WORDS):
-            speaker.speak("Goodbye Sir.")
-            break
-
-        if contains(text, WAKE_WORDS):
-
-            command = remove_wake_word(text)
-
-            if command == "":
-                speaker.speak("Yes Sir?")
-                sleeping = False
-                continue
-
-            text = command
-
-        else:
-            continue
-
-    else:
-
-        text = listener.listen()
-
-        if not text:
-            continue
-
-        print()
-        print("Heard :", text)
-
-        if contains(text, EXIT_WORDS):
-            speaker.speak("Goodbye Sir.")
-            break
-
-        if contains(text, STOP_WORDS):
-            speaker.speak("Standing by.")
-            sleeping = True
-            continue
-
-    print()
-    print("Thinking...")
-
-    answer = brain.ask(text)
-
-    print()
-    print("JARVIS :", answer)
-
-    print()
-    print("Speaking...")
-
-    speaker.speak(answer)
-
-    sleeping = True
+runtime = NovaRuntime()
+runtime.run(
+    callbacks={
+        "status": print_status,
+        "heard": print_heard,
+        "answer": print_answer,
+    }
+)

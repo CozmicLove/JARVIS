@@ -6,12 +6,12 @@ from PySide6.QtGui import QPainter, QColor, QPen, QFont
 from PySide6.QtWidgets import QApplication, QWidget
 
 
-class JarvisHUD(QWidget):
+class NovaHUD(QWidget):
 
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("JARVIS HUD")
+        self.setWindowTitle("NOVA HUD")
         self.setFixedSize(420, 420)
         self.setWindowFlags(
             Qt.FramelessWindowHint |
@@ -86,7 +86,7 @@ class JarvisHUD(QWidget):
 
             painter.setPen(QColor(180, 240, 255))
             painter.setFont(QFont("Segoe UI", 22, QFont.Bold))
-            painter.drawText(self.rect(), Qt.AlignCenter, "JARVIS")
+            painter.drawText(self.rect(), Qt.AlignCenter, "NOVA")
 
             painter.setFont(QFont("Segoe UI", 10))
             painter.drawText(
@@ -104,6 +104,6 @@ class JarvisHUD(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    hud = JarvisHUD()
+    hud = NovaHUD()
     hud.show()
     sys.exit(app.exec())

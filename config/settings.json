@@ -1,10 +1,39 @@
 {
-    "jarvis": {
-        "name": "JARVIS",
+    "nova": {
+        "name": "NOVA",
         "version": "0.1.0",
         "codename": "Foundation",
         "developer": "Alfred",
         "language": "id",
         "voice": "default"
+    },
+    "brain": {
+        "provider": "hybrid",
+        "local": {
+            "model": "gemma3:4b",
+            "url": "http://localhost:11434/api/generate",
+            "timeout": 120
+        },
+        "nvidia": {
+            "model": "z-ai/glm-5.2",
+            "fallback_model": "meta/llama-3.1-8b-instruct",
+            "url": "https://integrate.api.nvidia.com/v1/chat/completions",
+            "timeout": 18,
+            "max_tokens": 300,
+            "thinking": false,
+            "reasoning_effort": "low"
+        },
+        "openrouter": {
+            "model": "openrouter/free",
+            "fallback_model": "nvidia/nemotron-3-super-120b-a12b:free",
+            "url": "https://openrouter.ai/api/v1/chat/completions",
+            "timeout": 20,
+            "max_tokens": 360
+        }
+    },
+    "vision": {
+        "model": "meta/llama-3.2-11b-vision-instruct",
+        "openrouter_model": "openrouter/free",
+        "timeout": 10
     }
 }
