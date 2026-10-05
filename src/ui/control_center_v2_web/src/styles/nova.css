@@ -1,0 +1,62 @@
+.nova-screen { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+body::before { animation: none !important; }
+.nova-screen .nova-panel { position: relative; min-width: 0; font-family: Consolas, monospace; font-size: 11px; color: rgba(224,242,254,.7); }
+.nova-panel-head { height: 39px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(186,230,253,.11); }
+.nova-label { display: flex; align-items: center; gap: 8px; color: #7dd3fc; letter-spacing: .24em; font-weight: 700; }
+.nova-dot { width: 5px; height: 5px; border-radius: 50%; background: #a5f3fc; box-shadow: 0 0 10px #7dd3fc; }
+.nova-panel-note { color: rgba(224,242,254,.32); font-size: 9px; letter-spacing: .14em; }
+.nova-panel-body { padding: 13px 14px; }
+.nova-dashboard { position: absolute; z-index: 20; inset: 8.2% 1.2% 17%; display: grid; grid-template-columns: minmax(255px, 23%) minmax(0, 1fr) minmax(330px, 28%); gap: 12px; pointer-events: none; }
+.nova-left-column { grid-column: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; pointer-events: auto; }
+.nova-left-stack { display: flex; flex-direction: column; gap: 12px; margin-top: clamp(64px, 12vh, 126px); }
+.nova-dialogue { grid-column: 3; height: 100%; min-height: 0; pointer-events: auto; }
+.nova-telemetry { height: 49px; flex: none; }
+.nova-telemetry .nova-panel-head { display: none; }
+.nova-telemetry .nova-panel-body { display: flex; align-items: center; justify-content: space-around; height: 100%; gap: 4px; color: #8ddaf2; white-space: nowrap; }
+.nova-uptime { height: 135px; flex: none; }
+.nova-uptime-value { font-size: 24px; color: #e0f2fe; letter-spacing: .08em; text-shadow: 0 0 12px rgba(125,211,252,.4); }
+.nova-micro { color: rgba(125,211,252,.48); font-size: 9px; letter-spacing: .12em; margin: 6px 0; }
+.nova-mission { min-height: 78px; flex: none; }
+.nova-mission .nova-panel-body { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nova-tools { min-height: 78px; flex: none; }
+.nova-tools .nova-panel-body { color: rgba(125,211,252,.56); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nova-dialogue .nova-panel-body { height: calc(100% - 39px); padding: 0; }
+.nova-dialogue-scroll { height: 100%; overflow-y: auto; padding: 16px 17px; }
+.nova-dialogue-line { display: flex; gap: 10px; line-height: 1.65; margin-bottom: 16px; color: rgba(224,242,254,.85); overflow-wrap: anywhere; }
+.nova-empty { color: rgba(224,242,254,.3); }
+.nova-prompt { color: #7dd3fc; white-space: nowrap; }
+.nova-screen .nova-command { position: absolute; z-index: 42; left: 50%; transform: translateX(-50%); width: min(50%, 780px); bottom: 8%; height: 58px; display: flex; align-items: center; gap: 8px; padding: 8px; }
+.nova-command-icon { flex: none; width: 33px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(125,211,252,.15); border-radius: 9px; color: #8ddaf2; }
+.nova-command-status { flex: 1; min-width: 0; height: 36px; border: 1px solid rgba(125,211,252,.13); border-radius: 9px; padding: 9px 14px; background: rgba(6,17,29,.38); color: rgba(224,242,254,.5); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nova-command button, .nova-return { height: 36px; padding: 0 12px; border: 1px solid rgba(125,211,252,.28); border-radius: 9px; color: #9eeaff; letter-spacing: .12em; font-size: 10px; pointer-events: auto; }
+.nova-command button:hover, .nova-return:hover { background: rgba(125,211,252,.12); }
+.donor-orb-size { width: clamp(280px, 43vmin, 560px); }
+.nova-identity { position: absolute; z-index: 20; top: calc(50% + 23vmin); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; color: #a5e9fb; font-family: Bahnschrift, Consolas, monospace; letter-spacing: .35em; font-size: 14px; white-space: nowrap; text-shadow: 0 0 15px rgba(125,211,252,.45); }
+.nova-identity small { color: rgba(125,211,252,.55); font-size: 9px; letter-spacing: .25em; }
+.nova-floating, .nova-orb-mode { background: transparent !important; }
+body.nova-floating::before, body.nova-floating::after { display: none !important; }
+.nova-orb-mode .nova-atmosphere, .nova-orb-mode .nova-corner-frame { display: none; }
+.nova-orb-mode .donor-orb-size { width: var(--floating-orb-diameter); }
+.nova-orb-mode .donor-orb-root { transform: translateY(-5px); }
+/* Floating presentation only: override inline SVG shadows, including the
+   amber markers and reactor coil. Control Center retains the donor effects. */
+.nova-orb-mode, .nova-orb-mode *,
+.nova-orb-mode::before, .nova-orb-mode::after,
+.nova-orb-mode *::before, .nova-orb-mode *::after {
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.nova-orb-mode .donor-orb-halo,
+.nova-orb-mode .donor-core-fill,
+.nova-orb-mode .donor-reactor-bloom { display: none; }
+.nova-orb-mode .donor-reactor-core { opacity: .45 !important; }
+.nova-orb-mode .donor-reactor-core-gradient stop:first-child { stop-color: var(--orb-glow); stop-opacity: .35; }
+.nova-orb-mode .donor-reactor-core-gradient stop:nth-child(2) { stop-opacity: .5; }
+.nova-floating-hitarea { position: absolute; z-index: 30; inset: 0; cursor: grab; user-select: none; }
+.nova-floating-hitarea:active { cursor: grabbing; }
+.nova-orb-state { position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%); color: #a5e9fb; font: 11px Consolas, monospace; letter-spacing: .28em; white-space: nowrap; text-shadow: 0 1px 5px #000, 0 0 7px #000, 0 0 12px rgba(125,211,252,.75); }
+@media (max-width: 1200px) { .nova-dashboard { grid-template-columns: minmax(210px, 25%) minmax(0, 1fr) minmax(280px, 30%); } .nova-screen .nova-command { width: 56%; } .donor-orb-size { width: clamp(260px, 39vmin, 480px); } .nova-identity { top: calc(50% + 21vmin); } }
+@media (max-height: 760px) { .nova-dashboard { bottom: 16%; } .nova-uptime { height: 112px; } .nova-mission, .nova-tools { min-height: 68px; } }

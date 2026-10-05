@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVA Orb Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <div class="heading"><span class="eyebrow">VISUAL SYSTEM / PROTOTYPE</span><h1>NOVA</h1></div>
+    <div id="viewport" aria-label="Animated NOVA energy orb"></div>
+    <div class="status"><span class="status-line"></span><span id="state-label">STANDBY</span><span class="status-line"></span></div>
+    <div class="controls" aria-label="Visual state controls">
+      <button data-state="STANDBY" class="active">STANDBY</button>
+      <button data-state="LISTENING">LISTENING</button>
+      <button data-state="PROCESSING">PROCESSING</button>
+      <button data-state="THINKING">THINKING</button>
+      <button data-state="SPEAKING">SPEAKING</button>
+      <button data-state="CODEX">CODEX</button>
+      <button data-state="SUCCESS">SUCCESS</button>
+      <button data-state="ERROR">ERROR</button>
+    </div>
+    <div class="view-controls" aria-label="Camera view controls">
+      <button data-view="CONTROL_CENTER">CONTROL CENTER VIEW</button>
+      <button data-view="ORB" class="active">ORB VIEW</button>
+    </div>
+    <div id="render-error" role="alert" hidden></div>
+  </main>
+  <script src="vendor/nova-orb.bundle.js"></script>
+</body>
+</html>

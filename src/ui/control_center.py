@@ -15,7 +15,9 @@ SRC_ROOT = os.path.join(PROJECT_ROOT, "src")
 if SRC_ROOT not in sys.path:
     sys.path.insert(0, SRC_ROOT)
 
-from PySide6.QtCore import Qt, QTimer, QThread, Signal, QRect
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, QRect, QUrl
+from PySide6.QtWebChannel import QWebChannel
+from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QPainter, QColor, QPen, QFont, QPainterPath, QRadialGradient, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -31,10 +33,20 @@ from PySide6.QtWidgets import (
 
 from src.system.monitor import SystemMonitor
 from core.runtime import NovaRuntime
+from src.ui.control_center_v2_bridge import NovaPresentationBridge
 
 
 MAX_CONVERSATION_ENTRIES = 45
 STREAM_RENDER_INTERVAL = 0.18
+FLOATING_ORB_PRESETS = {
+    "SMALL": (195, 210, 150),
+    "NORMAL": (230, 250, 180),
+    "LARGE": (275, 300, 220),
+}
+FLOATING_ORB_SIZE = os.environ.get("NOVA_FLOATING_ORB_SIZE", "NORMAL").upper()
+FLOATING_ORB_WINDOW_WIDTH, FLOATING_ORB_WINDOW_HEIGHT, FLOATING_ORB_DIAMETER = (
+    FLOATING_ORB_PRESETS.get(FLOATING_ORB_SIZE, FLOATING_ORB_PRESETS["NORMAL"])
+)
 
 
 class VoiceWorker(QThread):
@@ -1220,11 +1232,15 @@ class ControlCenter(QWidget):
         super().__init__()
 
         self.monitor = SystemMonitor()
+        self.started_at = time.monotonic()
+        self.latest_telemetry = None
         self.orb_mode = False
+        self._compact_position = None
         self.drag_position = None
         self.orb_window = None
         self.voice_worker = None
         self.nova_status = "LOADING"
+        self.floating_orb_diameter = FLOATING_ORB_DIAMETER
         self.conversation_entries = []
         self.streaming_nova_index = None
         self.last_stream_render = 0
@@ -1307,7 +1323,17 @@ class ControlCenter(QWidget):
         self.conversation.setReadOnly(True)
         self.seed_conversation()
 
-        self.orb = NovaOrb()
+        web_index = os.path.join(
+            os.path.dirname(__file__), "control_center_v2_web", "dist", "index.html"
+        )
+        if not os.path.isfile(web_index):
+            raise FileNotFoundError(
+                f"NOVA Control Center V2 bundle is missing: {web_index}"
+            )
+        self._v2_web_index = web_index
+        # The mascot renderer belongs only to the legacy UI. Never construct it
+        # on the V2 startup path, even as an off-screen placeholder.
+        self.orb = None
 
         self.cpu = StatusRow("CPU")
         self.gpu = StatusRow("GPU")
@@ -1395,6 +1421,8 @@ class ControlCenter(QWidget):
             scrollbar.setValue(scrollbar.maximum())
         else:
             scrollbar.setValue(min(old_scroll_value, scrollbar.maximum()))
+        if hasattr(self, "v2_bridge"):
+            self.v2_bridge.publish()
 
     def append_conversation(self, role, message):
         if not str(message).strip():
@@ -1458,7 +1486,8 @@ class ControlCenter(QWidget):
             "OFFLINE": "Offline",
         }.get(status, status.title())
 
-        self.orb.set_status(status)
+        if self.orb is not None:
+            self.orb.set_status(status)
 
         if self.orb_window is not None:
             self.orb_window.orb.set_status(status)
@@ -1472,6 +1501,10 @@ class ControlCenter(QWidget):
         self.update_realtime()
 
     def build_layout(self):
+        if self._v2_web_index:
+            self.build_v2_layout(self._v2_web_index)
+            return
+
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(24, 18, 24, 18)
         self.main_layout.setSpacing(10)
@@ -1550,6 +1583,51 @@ class ControlCenter(QWidget):
         self.main_layout.addLayout(body)
         self.main_layout.addWidget(self.footer)
 
+    def build_v2_layout(self, web_index):
+        self.status_text = QLabel("STATUS : STARTING", self)
+        # Retained for the legacy status setter, never a second visible label.
+        self.status_text.hide()
+        self.setObjectName("novaControlCenter")
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAutoFillBackground(False)
+        self.setStyleSheet(self.base_stylesheet + "\nQWidget#novaControlCenter { background: transparent; }\n")
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+
+        self.v2_bridge = NovaPresentationBridge(self)
+        self.v2_channel = QWebChannel(self)
+        self.v2_channel.registerObject("nova", self.v2_bridge)
+        self.v2_view = QWebEngineView(self)
+        self.v2_view.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.v2_view.setAutoFillBackground(False)
+        self.v2_view.setStyleSheet("background: transparent;")
+        self.v2_view.page().setBackgroundColor(QColor("#03070f"))
+        self.v2_view.page().setWebChannel(self.v2_channel)
+        self.v2_view.setContextMenuPolicy(Qt.NoContextMenu)
+        self._v2_frontend_ready = False
+        self._v2_frame_ready = False
+        self.v2_bridge.frontendReady.connect(self._show_v2_when_ready)
+        self.v2_bridge.frameReady.connect(self._reveal_v2_when_ready)
+        self.v2_view.load(QUrl.fromLocalFile(web_index))
+        self.main_layout.addWidget(self.v2_view)
+
+    def _show_v2_when_ready(self):
+        if self._v2_frontend_ready:
+            return
+        self._v2_frontend_ready = True
+        # A near-transparent visible surface keeps WebEngine's compositor
+        # active; fully transparent windows can suspend animation frames.
+        self.setWindowOpacity(0.01)
+        self.show()
+
+    def _reveal_v2_when_ready(self):
+        if self._v2_frame_ready or not self._v2_frontend_ready:
+            return
+        self._v2_frame_ready = True
+        self.setWindowOpacity(1)
+
     def toggle_orb_mode(self):
         if self.orb_mode:
             self.show_control_center()
@@ -1557,6 +1635,9 @@ class ControlCenter(QWidget):
             self.show_orb_mode()
 
     def show_orb_mode(self):
+        if hasattr(self, "v2_view"):
+            self.enter_compact_orb_mode()
+            return
         self.orb_mode = True
 
         if self.orb_window is None:
@@ -1567,6 +1648,9 @@ class ControlCenter(QWidget):
         self.orb_window.show()
 
     def show_control_center(self):
+        if hasattr(self, "v2_view") and self.orb_mode:
+            self.exit_compact_orb_mode()
+            return
         self.orb_mode = False
 
         if self.orb_window is not None:
@@ -1574,9 +1658,70 @@ class ControlCenter(QWidget):
 
         self.show()
 
+    def enter_compact_orb_mode(self):
+        if not hasattr(self, "v2_view") or self.orb_mode:
+            return
+
+        self._control_rect = self.geometry()
+        self._control_minimum_size = self.minimumSize()
+        self._control_was_maximized = self.isMaximized()
+        self._control_window_flags = self.windowFlags()
+        self.setWindowState(Qt.WindowNoState)
+        self.setMinimumSize(1, 1)
+        self.setWindowFlags(self._control_window_flags | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
+        self.resize(FLOATING_ORB_WINDOW_WIDTH, FLOATING_ORB_WINDOW_HEIGHT)
+        if self._compact_position is None:
+            screen = self.screen() or QApplication.primaryScreen()
+            available = screen.availableGeometry()
+            self.move(available.center() - self.rect().center())
+        else:
+            self.move(self._compact_position)
+        self.orb_mode = True
+        # Keep the native compositor's opacity in sync with the document.
+        # CSS-only opaque -> transparent changes can leave stale pixels in
+        # Qt WebEngine's surface (rings and old labels accumulate).
+        self.v2_view.page().setBackgroundColor(QColor(0, 0, 0, 0))
+        self.show()
+        self._set_floating_window_chrome(True)
+        self.v2_bridge.modeChanged.emit("orb")
+
+    def exit_compact_orb_mode(self):
+        if not hasattr(self, "v2_view") or not self.orb_mode:
+            return
+
+        self._compact_position = self.pos()
+        self.setWindowFlags(self._control_window_flags)
+        self.setGeometry(self._control_rect)
+        self.setMinimumSize(self._control_minimum_size)
+        self.orb_mode = False
+        self.v2_view.page().setBackgroundColor(QColor("#03070f"))
+        if self._control_was_maximized:
+            self.showMaximized()
+        else:
+            self.show()
+            self.setGeometry(self._control_rect)
+        self._set_floating_window_chrome(False)
+        self.v2_bridge.modeChanged.emit("control")
+
+    def _set_floating_window_chrome(self, floating):
+        if sys.platform != "win32":
+            return
+        try:
+            import ctypes
+
+            hwnd = ctypes.c_void_p(int(self.winId()))
+            border = ctypes.c_uint(0xFFFFFFFE if floating else 0xFFFFFFFF)
+            corner = ctypes.c_int(1 if floating else 0)
+            dwm = ctypes.windll.dwmapi.DwmSetWindowAttribute
+            dwm(hwnd, 34, ctypes.byref(border), ctypes.sizeof(border))
+            dwm(hwnd, 33, ctypes.byref(corner), ctypes.sizeof(corner))
+        except (AttributeError, OSError):
+            pass
+
     def shutdown_windows(self):
         self.timer.stop()
-        self.orb.timer.stop()
+        if self.orb is not None:
+            self.orb.timer.stop()
 
         if self.voice_worker is not None:
             self.voice_worker.stop()
@@ -1590,6 +1735,7 @@ class ControlCenter(QWidget):
 
     def update_realtime(self):
         data = self.monitor.get_status()
+        self.latest_telemetry = data
         now = time.strftime("%H:%M:%S")
 
         self.cpu.update_value(data["cpu"], data["cpu_name"])
@@ -1617,6 +1763,8 @@ class ControlCenter(QWidget):
         self.footer.setText(
             f"STATUS : {self.nova_status}     |     CPU {data['cpu']}%     GPU {data['gpu']}%     RAM {data['ram']}%     TIME {now}"
         )
+        if hasattr(self, "v2_bridge"):
+            self.v2_bridge.publish()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -1939,5 +2087,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
     window = ControlCenter()
-    window.show()
+    if not window._v2_web_index:
+        window.show()
     sys.exit(app.exec())
